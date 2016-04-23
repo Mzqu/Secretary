@@ -7,6 +7,8 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
+// router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
+console.log(bot);
+// router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
 
 module.exports = router;
