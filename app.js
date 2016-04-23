@@ -11,11 +11,11 @@ var users = require('./routes/users');
 var app = express();
 
 //Chatbot stuff
-var restify = require('restify');
-var builder = require('botbuilder');
+//var restify = require('restify');
+//var builder = require('botbuilder');
 //Create bot, add dialogs
-var bot = new builder.BotConnectorBot({ appId: 'YourAppId', appSecret: 'YourAppSecret' });
-
+//var bot = new builder.BotConnectorBot({ appId: 'YourAppId', appSecret: 'YourAppSecret' });
+/*
 //this doesn't seem to work, ignore for now-----//
 var helloBot = new builder.TextBot();           //
 helloBot.add('/', function (session) {          //
@@ -27,11 +27,12 @@ helloBot.listenStdin();                         //
 bot.add('/', function (session) {
   session.send('Hello World');
 });
-var restify_server = restify.createServer();
-restify_server.post('/api/messages', bot.verifyBotFramework(), bot.listen());
-restify_server.listen(process.env.port || 3978, function () {
-  console.log('%s listening to %s', restify_server.name, restify_server.url);
-});
+//var restify_server = restify.createServer();
+//restify_server.post('/api/messages', bot.verifyBotFramework(), bot.listen());
+//restify_server.listen(process.env.port || 3978, function () {
+//  console.log('%s listening to %s', restify_server.name, restify_server.url);
+//});
+*/
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
