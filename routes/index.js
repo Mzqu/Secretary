@@ -8,7 +8,6 @@ router.get('/', function(req, res, next) {
 });
 
 // router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
-console.log(bot);
 // router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
 
 module.exports = router;
