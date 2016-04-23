@@ -15,6 +15,15 @@ var restify = require('restify');
 var builder = require('botbuilder');
 //Create bot, add dialogs
 var bot = new builder.BotConnectorBot({ appId: 'YourAppId', appSecret: 'YourAppSecret' });
+
+//this doesn't seem to work, ignore for now-----//
+var helloBot = new builder.TextBot();           //
+helloBot.add('/', function (session) {          //
+  session.send('feeeeed');                      //
+});                                             //
+helloBot.listenStdin();                         //
+//----------------------------------------------//
+
 bot.add('/', function (session) {
   session.send('Hello World');
 });
