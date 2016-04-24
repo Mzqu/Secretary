@@ -73,7 +73,7 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
                 date.getMonth() + 1, date.getDate(), date.getFullYear(),
                 isAM ? date.getHours() : date.getHours() - 12, date.getMinutes(), isAM ? 'am' : 'pm');
         } else {*/
-            session.send('Ok... no problem.');
+            session.send('Ok.... no problem.');
         //}
     }
 ]));
