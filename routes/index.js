@@ -17,7 +17,7 @@ cortanaBot.add('/', dialog);
 
 bot.addCommand(new utils.BotCommandFactory('check', [
   function(session, args, next) {
-		console.log("CHECK");
+		console.log(JSON.stringify(args.entities));
     twilioMessage = JSON.stringify(args.entities);
     callbackGlobal("check");
   },
@@ -202,7 +202,16 @@ router.post('/', function(req, res) {
 						}
   			} else if (intent == "check") {
           if (json[0].entity == "temperature") {
-            sendSMS(req.body.From, "" + cylon.start());
+            console.dir(cylon);
+            console.log();
+            sendSMS(req.body.From, "Checking temperature...");
+            var waitTimer = setInterval(function() {
+              if (cylon.temp) {
+                console.log(cylon.temp);
+                sendSMS(req.body.From, cylon.temp);
+                clearInterval(waitTimer);
+              }
+            }, 100);
           }
         } else {
           twiml.message(smsManager(twilioMessage, intent));
