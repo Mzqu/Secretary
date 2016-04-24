@@ -18,13 +18,13 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
 	function(session, args, next) {
 		if (builder.EntityRecognizer.findEntity(args.entities, 'builtin.temperature')) {
 			twilioMessage = JSON.stringify(args.entities);
-      callbackGlobal("temperature");
 			finished = true;
 			session.send("lmao");
 		} else {
       finished = true;
 			session.send("no entities found");
 		}
+    callbackGlobal("temperature");
 	},
 	function(session, results, next) {
 		next();
@@ -33,17 +33,17 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
 		session.send('Ok... no problem.');
 	}
 ]));
-bot.addCommand(new utils.BotCommandFactory('texting'), [
+bot.addCommand(new utils.BotCommandFactory('texting', [
   function(session, args, next) {
     if (builder.EntityRecognizer.findEntity(args.entities, 'texting')) {
       twilioMessage = JSON.stringify(args.entities);
-      callbackGlobal("texting");
       finished = true;
       session.send("lmao");
     } else {
       finished = true;
       session.send("no entity found");
     }
+    callbackGlobal("texting");
   },
   function (session, results, next) {
     next();
@@ -51,18 +51,18 @@ bot.addCommand(new utils.BotCommandFactory('texting'), [
   function (session, results) {
     session.send("???");
   }
-]);
-bot.addCommand(new utils.BotCommandFactory('calling'), [
+]));
+bot.addCommand(new utils.BotCommandFactory('calling', [
   function(session, args, next) {
     if (builder.EntityRecognizer.findEntity(args.entities, 'calling')) {
       twilioMessage = JSON.stringify(args.entities);
-      callbackGlobal("calling");
       finished = true;
       session.send("lmao");
     } else {
       finished = true;
       session.send("no entity found");
     }
+    callbackGlobal("calling");
   },
   function (session, results, next) {
     next();
@@ -70,10 +70,11 @@ bot.addCommand(new utils.BotCommandFactory('calling'), [
   function (session, results) {
     session.send("???");
   }
-]);
+]));
 bot.setDefault(new utils.BotDefaultCommandFactory(function() {
   builder.DialogAction.send("I'm sorry I didn't understand. I can only create and delete alarms.");
   finished = true;
+  callbackGlobal("idk");
 }));
 
 router.get('/', function(req, res) {
@@ -162,7 +163,7 @@ router.post('/', function(req, res) {
         console.log(e.message);
         sendSMS(req.body.From, "Command not recognized.");
       } finally {
-			  clearInterval(testerino);
+			  // clearInterval(testerino);
         twilioMessage = "";
       }
   	}
