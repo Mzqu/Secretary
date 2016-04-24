@@ -11,12 +11,14 @@ var twilioMessage = '';
 var cortanaBot = bot.bot;
 var dialog = bot.dialog;
 var finished = false;
+var callbackGlobal;
 cortanaBot.add('/', dialog);
 
 bot.addCommand(new utils.BotCommandFactory('set temperature', [
 	function(session, args, next) {
 		if (builder.EntityRecognizer.findEntity(args.entities, 'builtin.temperature')) {
 			twilioMessage = JSON.stringify(args.entities);
+      callbackGlobal("temperature");
 			finished = true;
 			session.send("lmao");
 		} else {
@@ -35,7 +37,7 @@ bot.addCommand(new utils.BotCommandFactory('texting'), [
   function(session, args, next) {
     if (builder.EntityRecognizer.findEntity(args.entities, 'texting')) {
       twilioMessage = JSON.stringify(args.entities);
-      // callbackerino("texting");
+      callbackGlobal("texting");
       finished = true;
       session.send("lmao");
     } else {
@@ -54,6 +56,7 @@ bot.addCommand(new utils.BotCommandFactory('calling'), [
   function(session, args, next) {
     if (builder.EntityRecognizer.findEntity(args.entities, 'calling')) {
       twilioMessage = JSON.stringify(args.entities);
+      callbackGlobal("calling");
       finished = true;
       session.send("lmao");
     } else {
@@ -130,41 +133,40 @@ router.post('/', function(req, res) {
   	cortanaBot.processMessage({
   		text: req.body.Body || ''
   	});
-  	var testerino = setInterval(function() {
+    function callbackerino(intent) {
   		console.log("running");
-  		if (finished == true) {
-        try {
-          var json = JSON.parse(twilioMessage);
-    			console.log(json);
-    			finished = !finished;
-    			console.log(twilioMessage);
-          twiml.message(smsManager(twilioMessage));
-    			if (json[0].type == "texting") {
-    				var spawn = require('child_process').spawn;
-    				var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
-    				sleep.on('close', function() {
-    					sendSMS(req.body.From, json[0].entity);
-    				});
-    			} else if (json[0].type == "calling") {
-            var spawn = require('child_process').spawn;
-    				var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
-    				sleep.on('close', function() {
-    					sendSMS(req.body.From, json[0].entity);
-    				});
-          }
-    			res.writeHead(200, {
-    				'Content-Type': 'text/xml'
-    			});
-    			res.end(twiml.toString());
-        } catch (e) {
-          console.log(e.message);
-          sendSMS(req.body.From, "Command not recognized.");
-        } finally {
-  			  clearInterval(testerino);
-          twilioMessage = "";
+      try {
+        var json = JSON.parse(twilioMessage);
+  			console.log(json);
+  			finished = !finished;
+  			console.log(twilioMessage);
+        twiml.message(smsManager(twilioMessage));
+  			if (intent == "texting") {
+  				var spawn = require('child_process').spawn;
+  				var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
+  				sleep.on('close', function() {
+  					sendSMS(req.body.From, json[0].entity);
+  				});
+  			} else if (intent == "calling") {
+          var spawn = require('child_process').spawn;
+  				var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
+  				sleep.on('close', function() {
+  					sendSMS(req.body.From, json[0].entity);
+  				});
         }
-  		}
-  	}, 100);
+  			res.writeHead(200, {
+  				'Content-Type': 'text/xml'
+  			});
+  			res.end(twiml.toString());
+      } catch (e) {
+        console.log(e.message);
+        sendSMS(req.body.From, "Command not recognized.");
+      } finally {
+			  clearInterval(testerino);
+        twilioMessage = "";
+      }
+  	}
+    callbackGlobal = callbackerino;
   }
 });
 
