@@ -15,21 +15,7 @@ cortanaBot.add('/', dialog);
 
 bot.addCommand(new utils.BotCommandFactory('set temperature', [
 	function(session, args, next) {
-		// Resolve and store any entities passed from LUIS.
-		// var location = builder.EntityRecognizer.findEntity(args.entities, 'location');
-		//
-		// // Prompt for title
-		// if (!location) {
-		//     builder.Prompts.text(session, 'Where do you want to make it?');
-		// } else {
-		//     next();
-		// }
 		if (builder.EntityRecognizer.findEntity(args.entities, 'thermometer::target temperature') || builder.EntityRecognizer.findEntity(args.entities, 'filefolder::name')) {
-			// if (builder.EntityRecognizer.findEntity(args.entities, 'filefolder::location'))
-			// session.send(builder.EntityRecognizer.findEntity(args.entities, 'filefolder::location'));
-			// if (builder.EntityRecognizer.findEntity(args.entities, 'filefolder::name'))
-			//   session.send(builder.EntityRecognizer.findEntity(args.entities, 'filefolder::name'));
-			// session.send(args.entities[0].entity);
 			twilioMessage = JSON.stringify(args.entities);
 			finished = true;
 			session.send("lmao");
@@ -38,45 +24,46 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
 		}
 	},
 	function(session, results, next) {
-		/*var alarm = session.dialogData.alarm;
-		if (results.response) {
-		    alarm.title = results.response;
-		}
-
-		// Prompt for time (title will be blank if the user said cancel)
-		if (alarm.title && !alarm.timestamp) {
-		    builder.Prompts.time(session, 'What time would you like to set the alarm for?');
-		} else {*/
 		next();
-		//}
 	},
 	function(session, results) {
-		/*var alarm = session.dialogData.alarm;
-		if (results.response) {
-		    var time = builder.EntityRecognizer.resolveTime([results.response]);
-		    alarm.timestamp = time ? time.getTime() : null;
-		}
-
-		// Set the alarm (if title or timestamp is blank the user said cancel)
-		if (alarm.title && alarm.timestamp) {
-		    // Save address of who to notify and write to scheduler.
-		    alarm.to = session.message.from;
-		    alarm.from = session.message.to;
-		    alarms[alarm.title] = alarm;
-
-		    // Send confirmation to user
-		    var date = new Date(alarm.timestamp);
-		    var isAM = date.getHours() < 12;
-		    session.send('Creating alarm named "%s" for %d/%d/%d %d:%02d%s',
-		        alarm.title,
-		        date.getMonth() + 1, date.getDate(), date.getFullYear(),
-		        isAM ? date.getHours() : date.getHours() - 12, date.getMinutes(), isAM ? 'am' : 'pm');
-		} else {*/
 		session.send('Ok... no problem.');
-		//}
 	}
 ]));
-
+bot.addCommand(new utils.BotCommandFactory('texting'), [
+  function(session, args, next) {
+    if (builder.EntityRecognizer.findEntity(args.entities, 'responseMessage')) {
+      twilioMessage = JSON.stringify(args.entities);
+      finished = true;
+      session.send("lmao");
+    } else {
+      session.send("no entity found");
+    }
+  },
+  function (session, results, next) {
+    next();
+  },
+  function (session, results) {
+    session.send("???");
+  }
+]);
+bot.addCommand(new utils.BotCommandFactory('calling'), [
+  function(session, args, next) {
+    if (builder.EntityRecognizer.findEntity(args.entities, 'responseMessage')) {
+      twilioMessage = JSON.stringify(args.entities);
+      finished = true;
+      session.send("lmao");
+    } else {
+      session.send("no entity found");
+    }
+  },
+  function (session, results, next) {
+    next();
+  },
+  function (session, results) {
+    session.send("???");
+  }
+]);
 bot.setDefault(new utils.BotDefaultCommandFactory(builder.DialogAction.send("I'm sorry I didn't understand. I can only create and delete alarms.")));
 
 router.get('/', function(req, res) {
@@ -96,22 +83,24 @@ router.get('/', function(req, res) {
 
 router.post('/', function(req, res) {
 	var twiml = new twilio.TwimlResponse();
-	console.log(req.body.Body);
+	console.log(req.body.From);
 	cortanaBot.processMessage({
 		text: req.body.Body || ''
 	});
 	var testerino = setInterval(function() {
 		console.log("running");
 		if (finished == true) {
+      var json = JSON.parse(twilioMessage);
 			console.log("finished");
 			finished = !finished;
 			console.log(twilioMessage);
-			twiml.message(smsManager(twilioMessage));
-			if (JSON.parse(twilioMessage).type == "alarm") {
+      twiml.message(smsManager(twilioMessage));
+			if (json[0].type == 'texting') {
+        console.log("actally in the if");
 				const spawn = require('child_process').spawn;
-				const sleep = spawn('sleep', [json.entity]);
+				const sleep = spawn('sleep', [json[0].entity]);
 				sleep.on('close', function() {
-					twiml.message("Alarm up!");
+					sendSMS(req.body.From, 'alarm up!');
 				});
 			}
 			res.writeHead(200, {
@@ -126,12 +115,43 @@ router.post('/', function(req, res) {
 function smsManager(message) {
 	var json = JSON.parse(message);
 	if (json.type = "thermometer") {
-		return "Setting thermometer temperature to " + json.entity;
-	} else if (json.type = "alarm") {
+		return "Setting thermometer temperature to " + json[0].entity;
+	} else if (json.type = "texting") {
 		return "not implemented";
-	} else {
+	} else if (json.type = "calling") {
+    return "not implemented";
+  } else {
 		return message;
 	}
+}
+
+function sendSMS(number, message) {
+  var client = new twilio.RestClient('AC5d7b89f30b59ca831b99b3d25b8e6052', '54f8c1ce63f2c5f0d15c7834958c65f4');
+
+  // Pass in parameters to the REST API using an object literal notation. The
+  // REST client will handle authentication and response serialzation for you.
+  client.sendSms({
+      to:number,
+      from:'+18312186678',
+      body:message
+  }, function(error, message) {
+      // The HTTP request to Twilio will run asynchronously. This callback
+      // function will be called when a response is received from Twilio
+      // The "error" variable will contain error information, if any.
+      // If the request was successful, this value will be "falsy"
+      if (!error) {
+          // The second argument to the callback will contain the information
+          // sent back by Twilio for the request. In this case, it is the
+          // information about the text messsage you just sent:
+          console.log('Success! The SID for this SMS message is:');
+          console.log(message.sid);
+
+          console.log('Message sent on:');
+          console.log(message.dateCreated);
+      } else {
+          console.log('Oops! There was an error.');
+      }
+  });
 }
 // router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
 
