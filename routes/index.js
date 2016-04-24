@@ -12,7 +12,22 @@ var cortanaBot = bot.bot;
 var dialog = bot.dialog;
 var finished = false;
 var callbackGlobal;
+var cylon = require('CylonNest');
 cortanaBot.add('/', dialog);
+
+bot.addCommand(new utils.BotCommandFactory('check', [
+  function(session, args, next) {
+		console.log("CHECK");
+    twilioMessage = JSON.stringify(args.entities);
+    callbackGlobal("check");
+  },
+  function (session, results, next) {
+    next();
+  },
+  function (session, results) {
+    session.send("???");
+  }
+]));
 
 bot.addCommand(new utils.BotCommandFactory('set temperature', [
 	function(session, args, next) {
@@ -185,7 +200,11 @@ router.post('/', function(req, res) {
             } else {
 							twiml.message(smsManager(twilioMessage, intent));
 						}
-  			} else {
+  			} else if (intent == "check") {
+          if (json[0].entity == "temperature") {
+            sendSMS(req.body.From, "" + cylon.start());
+          }
+        } else {
           twiml.message(smsManager(twilioMessage, intent));
         }
   			res.writeHead(200, {
