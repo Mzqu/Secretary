@@ -2,6 +2,10 @@ function throwIncorrectFactoryError() {
 	throw new Error("Incorrect factory type found.");
 }
 
+function throwIncorrectBotTypeError() {
+	throw new Error("Incorrect bot type found.");
+}
+
 function Extendable() {}
 Extendable.prototype.extend = function(func, code) {
 	this[func] = code;
@@ -32,3 +36,4 @@ exports.throwIncorrectFactoryError = throwIncorrectFactoryError;
 exports.Extendable = Extendable;
 exports.BotCommandFactory = BotCommandFactory;
 exports.BotDefaultCommandFactory = BotDefaultCommandFactory;
+exports.throwIncorrectBotTypeError = throwIncorrectBotTypeError;
