@@ -35,7 +35,10 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
 ]));
 bot.addCommand(new utils.BotCommandFactory('texting', [
   function(session, args, next) {
-    if (builder.EntityRecognizer.findEntity(args.entities, 'texting')) {
+    console.log('TEXTING');
+    console.log(args.entities);
+    if (builder.EntityRecognizer.findEntity(args.entities, 'sentMessage')) {
+      console.log('TEXTING 2');
       twilioMessage = JSON.stringify(args.entities);
       finished = true;
       session.send("lmao");
@@ -54,7 +57,10 @@ bot.addCommand(new utils.BotCommandFactory('texting', [
 ]));
 bot.addCommand(new utils.BotCommandFactory('calling', [
   function(session, args, next) {
-    if (builder.EntityRecognizer.findEntity(args.entities, 'calling')) {
+    console.log('CALLING');
+    console.log(args.entities);
+    if (builder.EntityRecognizer.findEntity(args.entities, 'sentMessage')) {
+      console.log('CALLING 2');
       twilioMessage = JSON.stringify(args.entities);
       finished = true;
       session.send("lmao");
@@ -62,7 +68,7 @@ bot.addCommand(new utils.BotCommandFactory('calling', [
       finished = true;
       session.send("no entity found");
     }
-    callbackGlobal("calling");
+    callbackGlobal("texting");
   },
   function (session, results, next) {
     next();
@@ -93,9 +99,9 @@ router.get('/', function(req, res) {
 });
 
 router.post('/', function(req, res) {
-	var twiml = new twilio.TwimlResponse();
-	console.log(req.body.From);
-  if (req.body.Body.substring(0, 5).toLowerCase() == "open ") {
+	if (req.body.Body.toLowerCase() == "secretary") {
+		introduction(req);
+	} else if (req.body.Body.substring(0, 5).toLowerCase() == "open ") {
     var exec = require('child_process').exec;
     var child = exec('open -a "' + req.body.Body.substring(5, req.body.Body.length) + '"', function (error, stdout, stderr) {
       if (error == null) {
@@ -121,7 +127,7 @@ router.post('/', function(req, res) {
         });
       }
     });
-  } else if (req.body.Body.toLowerCase() == "sleep") {
+  } else if (req.body.Body.substring(0, 5).toLowerCase() == "sleep") {
     var exec = require('child_process').exec;
     var child = exec('pmset sleepnow', function (e, o, se) {
       if (e == null) {
@@ -130,30 +136,37 @@ router.post('/', function(req, res) {
         sendSMS(req.body.From, "Error putting computer to sleep.");
       }
     });
-  } else {
+  } else if (req.body.Body.substring(0, 4).toLowerCase() == "lock") {
+		var exec = require('child_process').exec;
+    var child = exec('/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend', function (e, o, se) {
+      if (e == null) {
+        sendSMS(req.body.From, "Locked computer.");
+      } else {
+        sendSMS(req.body.From, "Error locking computer");
+      }
+    });
+	} else {
   	cortanaBot.processMessage({
   		text: req.body.Body || ''
   	});
     function callbackerino(intent) {
+      var twiml = new twilio.TwimlResponse();
   		console.log("running");
       try {
         var json = JSON.parse(twilioMessage);
   			console.log(json);
   			finished = !finished;
-  			console.log(twilioMessage);
-        twiml.message(smsManager(twilioMessage));
   			if (intent == "texting") {
+          twiml.message(smsManager(twilioMessage, intent));
   				var spawn = require('child_process').spawn;
-  				var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
-  				sleep.on('close', function() {
-  					sendSMS(req.body.From, json[0].entity);
-  				});
-  			} else if (intent == "calling") {
-          var spawn = require('child_process').spawn;
-  				var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
-  				sleep.on('close', function() {
-  					sendSMS(req.body.From, json[0].entity);
-  				});
+          if (json.length < 2 || json[1].type != "builtin.datetime.time") {
+            var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
+  				  sleep.on('close', function() {
+  					    sendSMS(req.body.From, json[0].entity);
+  				      });
+            }
+  			} else {
+          twiml.message(smsManager(twilioMessage, intent));
         }
   			res.writeHead(200, {
   				'Content-Type': 'text/xml'
@@ -170,6 +183,18 @@ router.post('/', function(req, res) {
     callbackGlobal = callbackerino;
   }
 });
+
+function introduction(req) {
+	intro1(req);
+}
+
+function intro1(req) {
+	sendSMS(req.body.From, "Hi! I'm Secretary, your very own virtual SMS-based assistant!", intro2, req);
+}
+
+function intro2(req) {
+	sendSMS(req.body.From, "I can help you open and exit applications, set the thermostat, remind you of messages, and more!");
+}
 
 function parseTime(time) {
   var matches = time.substring(2, time.length).match(/[a-zA-Z]+|[0-9]+/g);
@@ -189,21 +214,41 @@ function parseTime(time) {
   return seconds;
 }
 
-function smsManager(message) {
+function smsManager(message, intent) {
 	var json = JSON.parse(message);
-	if (json[0].type == "builtin.temperature") {
+	if (intent == "temperature") {
 		return "Setting thermometer temperature to " + json[0].entity;
-	} else if (json[0].type == "texting") {
-		return "Got it! Texting you in " + json[1].resolution.duration;
-	} else if (json[0].type == "calling") {
-    return "Got it! Calling you in " + json[1].resolution.duration;
+	} else if (intent == "texting" && json[1].type == "builtin.datetime.duration") {
+		return "Got it! Texting you in " + json[1].resolution.duration.substring(2, json[1].resolution.duration.length);
+	} else if (intent == "texting" && json[1].type == "builtin.datetime.time") {
+    return "Please use 'later' instead of 'in' (i.e. 1 minute later vs. in 1 minute)";
   } else {
 		return message;
 	}
 }
 
-function sendSMS(number, message) {
+function secondsToDuration(seconds) {
+  var hours = Math.floor(seconds/3600);
+  var remainder = seconds % 3600;
+  var minutes = Math.floor(remainder/60);
+  remainder = Math.ceil(remainder % 60);
+  var result = "";
+  if (hours != 0) {
+    result += hours + "H";
+  }
+  if (minutes != 0) {
+    result += minutes + "M";
+  }
+  if (seconds != 0) {
+    result += remainder + "S";
+  }
+  return result;
+}
+
+function sendSMS(number, message, callback, req) {
   var client = new twilio.RestClient('AC5d7b89f30b59ca831b99b3d25b8e6052', '54f8c1ce63f2c5f0d15c7834958c65f4');
+	callback = callback || null;
+	req = req || null;
 
   // Pass in parameters to the REST API using an object literal notation. The
   // REST client will handle authentication and response serialzation for you.
@@ -217,6 +262,9 @@ function sendSMS(number, message) {
       // The "error" variable will contain error information, if any.
       // If the request was successful, this value will be "falsy"
       if (!error) {
+					if (callback != null) {
+						callback(req);
+					}
           // The second argument to the callback will contain the information
           // sent back by Twilio for the request. In this case, it is the
           // information about the text messsage you just sent:
