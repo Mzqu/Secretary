@@ -55,20 +55,11 @@ bot.addCommand(new utils.BotCommandFactory('texting', [
     session.send("???");
   }
 ]));
-bot.addCommand(new utils.BotCommandFactory('calling', [
+bot.addCommand(new utils.BotCommandFactory('calculate', [
   function(session, args, next) {
-    console.log('CALLING');
-    console.log(args.entities);
-    if (builder.EntityRecognizer.findEntity(args.entities, 'sentMessage')) {
-      console.log('CALLING 2');
-      twilioMessage = JSON.stringify(args.entities);
-      finished = true;
-      session.send("lmao");
-    } else {
-      finished = true;
-      session.send("no entity found");
-    }
-    callbackGlobal("texting");
+		console.log("OPERATION");
+    twilioMessage = JSON.stringify(args.entities);
+    callbackGlobal("calculate");
   },
   function (session, results, next) {
     next();
@@ -156,15 +147,44 @@ router.post('/', function(req, res) {
         var json = JSON.parse(twilioMessage);
   			console.log(json);
   			finished = !finished;
-  			if (intent == "texting") {
-          twiml.message(smsManager(twilioMessage, intent));
+				if (intent == "calculate") {
+					var symbols = [];
+					var numbers = [];
+					for (var i = 0; i < json.length; i++) {
+							if (json[i].type == "sign") {
+								symbols.push(json[i].entity);
+							} else if (json[i].type == "builtin.number"){
+								numbers.push(json[i].entity);
+							}
+					}
+					var result = "";
+					for (var i = 0; i < symbols.length; i++) {
+							result += numbers[i] + symbols[i];
+					}
+					result += numbers[symbols.length];
+					console.log(result);
+
+					twiml.message(eval(result) + "");
+				} else if (intent == "texting") {
   				var spawn = require('child_process').spawn;
-          if (json.length < 2 || json[1].type != "builtin.datetime.time") {
-            var sleep = spawn('sleep', [parseTime(json[1].resolution.duration)]);
+					var datetime = -1;
+					var sentMessage = -1;
+					for (var i = 0; i < json.length; i++) {
+						if (json[i].type == "builtin.datetime.duration") {
+								datetime = i;
+						} else if (json[i].type == "sentMessage") {
+							sentMessage = i;
+						}
+					}
+          if (datetime != -1) {
+						twiml.message(smsManager(twilioMessage, intent, datetime));
+            var sleep = spawn('sleep', [parseTime(json[datetime].resolution.duration)]);
   				  sleep.on('close', function() {
-  					    sendSMS(req.body.From, json[0].entity);
+  					    sendSMS(req.body.From, json[sentMessage].entity);
   				      });
-            }
+            } else {
+							twiml.message(smsManager(twilioMessage, intent));
+						}
   			} else {
           twiml.message(smsManager(twilioMessage, intent));
         }
@@ -193,7 +213,7 @@ function intro1(req) {
 }
 
 function intro2(req) {
-	sendSMS(req.body.From, "I can help you open and exit applications, set the thermostat, remind you of messages, and more!");
+	sendSMS(req.body.From, "I can open and exit applications, set the thermostat, remind you of messages, perform basic math, and more!");
 }
 
 function parseTime(time) {
@@ -214,13 +234,14 @@ function parseTime(time) {
   return seconds;
 }
 
-function smsManager(message, intent) {
+function smsManager(message, intent, index) {
+	index = index || 0;
 	var json = JSON.parse(message);
 	if (intent == "temperature") {
-		return "Setting thermometer temperature to " + json[0].entity;
-	} else if (intent == "texting" && json[1].type == "builtin.datetime.duration") {
-		return "Got it! Texting you in " + json[1].resolution.duration.substring(2, json[1].resolution.duration.length);
-	} else if (intent == "texting" && json[1].type == "builtin.datetime.time") {
+		return "Setting thermostat temperature to " + json[0].entity;
+	} else if (intent == "texting" && json[index].type == "builtin.datetime.duration") {
+		return "Got it! Texting you in " + json[index].resolution.duration.substring(2, json[index].resolution.duration.length);
+	} else if (intent == "texting") {
     return "Please use 'later' instead of 'in' (i.e. 1 minute later vs. in 1 minute)";
   } else {
 		return message;
