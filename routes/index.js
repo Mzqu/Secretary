@@ -3,16 +3,14 @@ var router = express.Router();
 var BCBot = require('BCBot');
 var utils = require('../util.js');
 var builder = require('botbuilder');
-
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+var twilio = require('twilio');
 
 var model = 'https://api.projectoxford.ai/luis/v1/application?id=f86def56-4901-4874-89c1-19f43e9e7d9d&subscription-key=9b8a3f03610f4c5aa8f07e1b31664d27';
-var bot = new BCBot(model, 'BotConnectorBot');
+var bot = new BCBot(model, 'TextBot');
+var twilioMessage = '';
 var cortanaBot = bot.bot;
 var dialog = bot.dialog;
+var finished = false;
 cortanaBot.add('/', dialog);
 
 bot.addCommand(new utils.BotCommandFactory('set temperature', [
@@ -32,7 +30,8 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
           // if (builder.EntityRecognizer.findEntity(args.entities, 'filefolder::name'))
           //   session.send(builder.EntityRecognizer.findEntity(args.entities, 'filefolder::name'));
           // session.send(args.entities[0].entity);
-          session.send(JSON.stringify(args.entities));
+          twilioMessage = JSON.stringify(args.entities);
+          finished = true;
           session.send("lmao");
         } else {
           session.send("no entities found");
@@ -79,7 +78,48 @@ bot.addCommand(new utils.BotCommandFactory('set temperature', [
 ]));
 
 bot.setDefault(new utils.BotDefaultCommandFactory(builder.DialogAction.send("I'm sorry I didn't understand. I can only create and delete alarms.")));
-router.post('/api/messages', cortanaBot.verifyBotFramework(), cortanaBot.listen());
+
+router.get('/', function(req, res) {
+    var twiml = new twilio.TwimlResponse();
+    if (req.query.Body == 'hello') {
+        twiml.message('Hi!');
+    } else if(req.query.Body == 'bye') {
+        twiml.message('Goodbye');
+    } else {
+        twiml.message('No Body param match, Twilio sends this in the request to your server.');
+    }
+    res.writeHead(200, {'Content-Type': 'text/xml'});
+    res.end(twiml.toString());
+});
+
+router.post('/', function(req, res) {
+    var twiml = new twilio.TwimlResponse();
+    console.log(req.body.Body);
+    cortanaBot.processMessage({ text: req.body.Body || '' });
+    var testerino = setInterval(function() {
+      console.log("running");
+      if (finished == true) {
+        console.log("finished");
+        finished = !finished;
+        console.log(twilioMessage);
+        twiml.message(smsManager(twilioMessage));
+        res.writeHead(200, {'Content-Type': 'text/xml'});
+        res.end(twiml.toString());
+        clearInterval(testerino);
+      }
+    }, 100);
+});
+
+function smsManager(message) {
+  var json = JSON.parse(message);
+  if (json.type = "thermometer") {
+    return "Setting thermometer temperature to " + json.entity;
+  } else if (json.type = "alarm") {
+    return "not implemented";
+  } else {
+    return message;
+  }
+}
 // router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
 
 module.exports = router;
