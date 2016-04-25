@@ -105,6 +105,7 @@ router.get('/', function(req, res) {
 });
 
 router.post('/', function(req, res) {
+  if (req.body.From == "+14084443301") {
 	if (req.body.Body.toLowerCase() == "secretary") {
 		introduction(req);
 	} else if (req.body.Body.substring(0, 5).toLowerCase() == "open ") {
@@ -202,8 +203,7 @@ router.post('/', function(req, res) {
 						}
   			} else if (intent == "check") {
           if (json[0].entity == "temperature") {
-            console.dir(cylon);
-            console.log();
+            cylon.start();
             sendSMS(req.body.From, "Checking temperature...");
             var waitTimer = setInterval(function() {
               if (cylon.temp) {
@@ -230,6 +230,7 @@ router.post('/', function(req, res) {
   	}
     callbackGlobal = callbackerino;
   }
+}
 });
 
 function introduction(req) {
@@ -311,7 +312,7 @@ function sendSMS(number, message, callback, req) {
       // The "error" variable will contain error information, if any.
       // If the request was successful, this value will be "falsy"
       if (!error) {
-					if (callback != null) {
+					if (callback != null && req != null) {
 						callback(req);
 					}
           // The second argument to the callback will contain the information
