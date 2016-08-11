@@ -1,6 +1,6 @@
 # Secretary
 
-Grand prize winner of SBHacks 2!
+Grand prize winner of [SBHacks 2](http://www.sbhacks.com/)!
 
 ## Overview
 
