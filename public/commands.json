@@ -1,0 +1,34 @@
+{
+  "commands": [
+    {
+      "text": ["sleep"],
+      "code": "pmset sleepnow",
+      "success": "Put computer to sleep",
+      "failure": "Error putting computer to sleep"
+    },
+    {
+      "text": ["nap", "doze"],
+      "code": "pmset displaysleepnow",
+      "success": "Put computer display to sleep",
+      "failure": "Error putting computer display to sleep"
+    },
+    {
+      "text": ["lock", "secure"],
+      "code": "/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend",
+      "success": "Locked computer",
+      "failure": "Error locking computer"
+    },
+    {
+      "text": ["wake", "awaken", "rise"],
+      "code": "caffeinate -u -t 2",
+      "success": "Woke computer",
+      "failure": "Error waking up computer"
+    },
+    {
+      "text": ["mute", "quiet", "shh"],
+      "code": "osascript -e 'set volume output muted true'",
+      "success": "Muted computer",
+      "failure": "Error muting computer"
+    }
+  ]
+}

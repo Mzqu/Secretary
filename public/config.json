@@ -1,0 +1,7 @@
+{
+  "user_phone": "+14084443301",
+  "twilio_phone": "+14082146297",
+  "twilio_api_key": "ACff874e1393a5d5d2dd140aaa06940353",
+  "twilio_api_secret": "dc91ab4d9b01704c5d92553fd9281566",
+  "local_to_web_url": "http://secretary.pagekite.me:80"
+}
