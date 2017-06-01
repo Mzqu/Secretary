@@ -4,10 +4,7 @@ var BCBot = require('BCBot');
 var utils = require('../util.js');
 var builder = require('botbuilder');
 var twilio = require('twilio');
-<<<<<<< HEAD
 var fs = require('fs');
-=======
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
 
 var model = 'https://api.projectoxford.ai/luis/v1/application?id=33892828-8dde-4383-9efa-8d4246fc5a2c&subscription-key=9b8a3f03610f4c5aa8f07e1b31664d27';
 var bot = new BCBot(model, 'TextBot');
@@ -17,19 +14,13 @@ var dialog = bot.dialog;
 var finished = false;
 var callbackGlobal;
 var cylon = require('CylonNest');
-<<<<<<< HEAD
 var commands = require('../public/commands').commands
 var config = require('../public/config')
-=======
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
+
 cortanaBot.add('/', dialog);
 
 bot.addCommand(new utils.BotCommandFactory('check', [
   function(session, args, next) {
-<<<<<<< HEAD
-=======
-		console.log(JSON.stringify(args.entities));
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
     twilioMessage = JSON.stringify(args.entities);
     callbackGlobal("check");
   },
@@ -117,7 +108,6 @@ router.get('/', function(req, res) {
 });
 
 router.post('/', function(req, res) {
-<<<<<<< HEAD
   if (req.body.From == config.user_phone) {
   	if (req.body.Body.toLowerCase() == "secretary") {
   		introduction(req);
@@ -239,134 +229,6 @@ router.post('/', function(req, res) {
       });
     }
   }
-=======
-  if (req.body.From == "+14084443301") {
-	if (req.body.Body.toLowerCase() == "secretary") {
-		introduction(req);
-	} else if (req.body.Body.substring(0, 5).toLowerCase() == "open ") {
-    var exec = require('child_process').exec;
-    var child = exec('open -a "' + req.body.Body.substring(5, req.body.Body.length) + '"', function (error, stdout, stderr) {
-      if (error == null) {
-        sendSMS(req.body.From, "Opened " + req.body.Body.substring(5, req.body.Body.length));
-      } else {
-        sendSMS(req.body.From, "Error opening " + req.body.Body.substring(5, req.body.Body.length));
-      }
-    });
-  } else if (req.body.Body.substring(0, 5).toLowerCase() == "exit ") {
-    console.log("exit");
-    var exec = require('child_process').exec;
-    var child = exec("ps -ax | awk '/[" + req.body.Body.charAt(5) + "]" + req.body.Body.substring(6, req.body.Body.length) + "/{print $1}'", function (error, stdout, stderr) {
-      var allProcesses = stdout.split('\n');
-      console.log(allProcesses);
-      for (var i = 0; i < allProcesses.length - 1; i++) {
-        console.log(allProcesses[i]);
-        var child2 = exec("kill " + allProcesses[i], function (e, o, se) {
-          if (e == null) {
-            sendSMS(req.body.From, "Exited " + req.body.Body.substring(5, req.body.Body.length));
-          } else {
-            sendSMS(req.body.From, "Error exiting " + req.body.Body.substring(5, req.body.Body.length));
-          }
-        });
-      }
-    });
-  } else if (req.body.Body.substring(0, 5).toLowerCase() == "sleep") {
-    var exec = require('child_process').exec;
-    var child = exec('pmset sleepnow', function (e, o, se) {
-      if (e == null) {
-        sendSMS(req.body.From, "Put computer to sleep.");
-      } else {
-        sendSMS(req.body.From, "Error putting computer to sleep.");
-      }
-    });
-  } else if (req.body.Body.substring(0, 4).toLowerCase() == "lock") {
-		var exec = require('child_process').exec;
-    var child = exec('/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend', function (e, o, se) {
-      if (e == null) {
-        sendSMS(req.body.From, "Locked computer.");
-      } else {
-        sendSMS(req.body.From, "Error locking computer");
-      }
-    });
-	} else {
-  	cortanaBot.processMessage({
-  		text: req.body.Body || ''
-  	});
-    function callbackerino(intent) {
-      var twiml = new twilio.TwimlResponse();
-  		console.log("running");
-      try {
-        var json = JSON.parse(twilioMessage);
-  			console.log(json);
-  			finished = !finished;
-				if (intent == "calculate") {
-					var symbols = [];
-					var numbers = [];
-					for (var i = 0; i < json.length; i++) {
-							if (json[i].type == "sign") {
-								symbols.push(json[i].entity);
-							} else if (json[i].type == "builtin.number"){
-								numbers.push(json[i].entity);
-							}
-					}
-					var result = "";
-					for (var i = 0; i < symbols.length; i++) {
-							result += numbers[i] + symbols[i];
-					}
-					result += numbers[symbols.length];
-					console.log(result);
-
-					twiml.message(eval(result) + "");
-				} else if (intent == "texting") {
-  				var spawn = require('child_process').spawn;
-					var datetime = -1;
-					var sentMessage = -1;
-					for (var i = 0; i < json.length; i++) {
-						if (json[i].type == "builtin.datetime.duration") {
-								datetime = i;
-						} else if (json[i].type == "sentMessage") {
-							sentMessage = i;
-						}
-					}
-          if (datetime != -1) {
-						twiml.message(smsManager(twilioMessage, intent, datetime));
-            var sleep = spawn('sleep', [parseTime(json[datetime].resolution.duration)]);
-  				  sleep.on('close', function() {
-  					    sendSMS(req.body.From, json[sentMessage].entity);
-  				      });
-            } else {
-							twiml.message(smsManager(twilioMessage, intent));
-						}
-  			} else if (intent == "check") {
-          if (json[0].entity == "temperature") {
-            cylon.start();
-            sendSMS(req.body.From, "Checking temperature...");
-            var waitTimer = setInterval(function() {
-              if (cylon.temp) {
-                console.log(cylon.temp);
-                sendSMS(req.body.From, cylon.temp);
-                clearInterval(waitTimer);
-              }
-            }, 100);
-          }
-        } else {
-          twiml.message(smsManager(twilioMessage, intent));
-        }
-  			res.writeHead(200, {
-  				'Content-Type': 'text/xml'
-  			});
-  			res.end(twiml.toString());
-      } catch (e) {
-        console.log(e.message);
-        sendSMS(req.body.From, "Command not recognized.");
-      } finally {
-			  // clearInterval(testerino);
-        twilioMessage = "";
-      }
-  	}
-    callbackGlobal = callbackerino;
-  }
-}
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
 });
 
 function introduction(req) {
@@ -381,13 +243,10 @@ function intro2(req) {
 	sendSMS(req.body.From, "I can open and exit applications, set the thermostat, remind you of messages, perform basic math, and more!");
 }
 
-<<<<<<< HEAD
 function capFirst(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-=======
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
 function parseTime(time) {
   var matches = time.substring(2, time.length).match(/[a-zA-Z]+|[0-9]+/g);
   var seconds = 0;
@@ -420,12 +279,10 @@ function smsManager(message, intent, index) {
 	}
 }
 
-<<<<<<< HEAD
 function testCommand(input, commands, from, callback) {
   var check = false;
   var command = null;
   var cleanedInput = input.trim().toLowerCase();
-  console.log(commands);
   for (var i = 0; i < commands.length; i++) {
     for (var j = 0; j < commands[i].text.length; j++) {
       if (cleanedInput.startsWith(commands[i].text[j])) {
@@ -450,8 +307,6 @@ function testCommand(input, commands, from, callback) {
   }
 }
 
-=======
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
 function secondsToDuration(seconds) {
   var hours = Math.floor(seconds/3600);
   var remainder = seconds % 3600;
@@ -471,11 +326,7 @@ function secondsToDuration(seconds) {
 }
 
 function sendSMS(number, message, callback, req) {
-<<<<<<< HEAD
   var client = new twilio.RestClient(config.twilio_api_key, config.twilio_api_secret);
-=======
-  var client = new twilio.RestClient('AC5d7b89f30b59ca831b99b3d25b8e6052', '54f8c1ce63f2c5f0d15c7834958c65f4');
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
 	callback = callback || null;
 	req = req || null;
 
@@ -483,11 +334,7 @@ function sendSMS(number, message, callback, req) {
   // REST client will handle authentication and response serialzation for you.
   client.sendSms({
       to:number,
-<<<<<<< HEAD
       from:config.twilio_phone,
-=======
-      from:'+18312186678',
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
       body:message
   }, function(error, message) {
       // The HTTP request to Twilio will run asynchronously. This callback
@@ -511,8 +358,6 @@ function sendSMS(number, message, callback, req) {
       }
   });
 }
-<<<<<<< HEAD
-
 function sendMMS(number, images, callback, req) {
   var client = new twilio.RestClient(config.twilio_api_key, config.twilio_api_secret);
 	callback = callback || null;
@@ -551,8 +396,6 @@ function sendMMS(number, images, callback, req) {
     }
   });
 }
-=======
->>>>>>> e0ddd71823d75acd0e89568bc46ac867b1c9b074
 // router.post('/api/messages', bot.verifyBotFramework(), bot.listen());
 
 module.exports = router;
